@@ -72,8 +72,7 @@ abstract class AbstractController
 
     public function getArg(string $name): mixed
     {
-        $args = $this->getArgs();
-        return $args[$name];
+        return $this->args[$name];
     }
 
     public function getParams(): array
