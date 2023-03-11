@@ -22,8 +22,15 @@ abstract class AbstractController
         $this->response = $response;
         $this->args = $args;
 
-        $methodName = $this->method;
-        return $this->$methodName();
+        try {
+            $methodName = $this->method;
+            return $this->$methodName();
+        } catch (Exception $error) {
+            return $this->error(
+                $error->getMessage(),
+                $error->getCode()
+            );
+        }
     }
 
     public function currentUser(): ?User
@@ -84,5 +91,15 @@ abstract class AbstractController
     {
         $params = $this->getParams();
         return $params[$name];
+    }
+
+    protected function checkBodyParams(array $body, array $requiredFields): bool
+    {
+        foreach ($requiredFields as $fieldName) {
+            if (!isset($body[$fieldName]))
+                throw new \Exception("{$fieldName} field is missing.", 400);
+        }
+
+        return true;
     }
 }

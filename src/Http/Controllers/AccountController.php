@@ -13,25 +13,24 @@ class AccountController extends AbstractController
     public function update(): Response
     {
         $body = $this->getRequest()->getParsedBody();
-        if ($user = $this->currentUser()) {
-            $user->fill($body);
-            $user->hashPassword();
+        $user = $this->currentUser()
+        if (!$user)
+            throw new \Exception('Impossible to retrieve your account', 401);
 
-            if ($user->save()) {
-                return $this->json([
-                    'error' => false,
-                    'user' => $user->getAttributes()
-                ]);
-            }
-
-            return $this->error('An error occured while trying to update your account', 500);
+        $user->fill($body);
+        $user->hashPassword();
+        if ($user->save()) {
+            return $this->json([
+                'error' => false,
+                'user' => $user->getAttributes()
+            ]);
         }
 
-        return $this->error('Impossible to retrieve your account', 500);
+        throw new \Exception('An error occured while updating your account', 500);
     }
 
     #[Router('/delete', Router::HTTP_METHOD_DELETE, LoggedUserMiddleware::class)]
-    public function register(): Response
+    public function delete(): Response
     {
         if ($user = $this->currentUser()) {
             $user->delete();
@@ -41,6 +40,6 @@ class AccountController extends AbstractController
             ]);
         }
 
-        return $this->error('An error occured while trying to delete your account', 500);
+        throw new \Exception('An error occured while trying to delete your account', 500);
     }
 }

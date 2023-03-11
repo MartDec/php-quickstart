@@ -16,7 +16,11 @@ class User extends Model
 
     public function checkPassword(string $password): bool
     {
-        return password_verify($password, $this->password);
+        $verified = password_verify($password, $this->password);
+        if (!$verified)
+            throw new \Exception('Wrong password', 400);
+
+        return $verified;
     }
 
     public function hashPassword(): self

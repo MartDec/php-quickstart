@@ -19,49 +19,44 @@ class SessionController extends AbstractController
     public function register(): Response
     {
         $body = $this->getRequest()->getParsedBody();
-        if (isset($body['email']) && isset($body['username']) && isset($body['password'])) {
-            if (User::where('email', $body['email'])->exists())
-                return $this->error("User {$body['email']} already exists", 400);
+        $this->checkBodyParams($body, ['email', 'username', 'password']);
 
-            $body['token'] = $this->generateToken($body['email'])->toString();
-            $user = new User($body);
-            $user->hashPassword();
-            if ($user->save()) {
-                return $this->json([
-                    'error' => false,
-                    'user' => $user->getAttributes()
-                ]);
-            }
+        if (User::where('email', $body['email'])->exists())
+            throw new \Exception("User {$body['email']} already exists", 400);
 
-            return $this->error('An error occured while creating yout profile', 500);
+        $body['token'] = $this->generateToken($body['email'])->toString();
+        $user = new User($body);
+        $user->hashPassword();
+        if ($user->save()) {
+            return $this->json([
+                'error' => false,
+                'user' => $user->getAttributes()
+            ]);
         }
 
-        return $this->error('Fields are missing', 400);
+        throw new \Exception('An error occured while creating yout profile', 500);
     }
 
     #[Router('/login', Router::HTTP_METHOD_POST, GuestUserMiddleware::class)]
     public function login(): Response
     {
         $body = $this->getRequest()->getParsedBody();
-        if (isset($body['email']) && isset($body['password'])) {
-            if ($user = User::where('email', $body['email'])->first()) {
-                if ($user->checkPassword($body['password'])) {
-                    $user->token = $this->generateToken($body['email'])->toString();
-                    $user->save();
+        $this->checkBodyParams($body, ['email', 'password']);
+        $user = User::where('email', $body['email'])->first();
 
-                    return $this->json([
-                        'error' => false,
-                        'user' => $user->getAttributes()
-                    ]);
-                }
+        if (!$user)
+            throw new \Exception("User {$body['email']} not found", 404);
 
-                return $this->error('Wrong password', 400);
-            }
-
-            return $this->error("User {$body['email']} not found", 404);
+        $user->checkPassword($body['password']);
+        $user->token = $this->generateToken($body['email'])->toString();
+        if ($user->save()) {
+            return $this->json([
+                'error' => false,
+                'user' => $user->getAttributes()
+            ]);
         }
 
-        return $this->error('Fields are missing', 400);
+        throw new \Exception('An error occured while you were trying to login', 500);
     }
 
     protected function generateToken(string $email): Plain

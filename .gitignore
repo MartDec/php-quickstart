@@ -3,6 +3,4 @@
 .idea/
 vendor/
 
-Dockerfile
-docker-compose.yml
 .env
